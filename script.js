@@ -16,6 +16,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let defaultBackgrounds = [
     {
+      url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2072&auto=format&fit=crop",
+      theme: "theme-sepia",
+    },
+    {
       url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop",
       theme: "theme-white",
     },
@@ -24,12 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
       theme: "theme-skyblue",
     },
     {
-      url: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=2070&auto=format&fit=crop",
-      theme: "theme-white",
-    },
-    {
-      url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2072&auto=format&fit=crop",
-      theme: "theme-black",
+      url: "https://images.unsplash.com/photo-1443926818681-717d074a57af?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1760",
     },
   ];
 
