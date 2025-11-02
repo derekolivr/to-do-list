@@ -32,7 +32,7 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 #change-bg-button,
@@ -46,7 +46,6 @@ body::before {
   transition: background-color 0.2s;
   backdrop-filter: blur(5px);
   white-space: nowrap; /* Prevent text from wrapping */
-  margin-bottom: 0.5rem;
 }
 
 #change-bg-button:hover,
@@ -291,6 +290,199 @@ body::before {
 .theme-skyblue .original-list-badge {
   background: rgba(11, 44, 72, 0.2);
   color: #0b2c48;
+}
+
+/* Sepia Theme */
+.container.theme-sepia {
+  background: rgba(244, 236, 222, 0.35);
+  border: 1px solid rgba(210, 196, 172, 0.5);
+  color: #5d4037;
+}
+.theme-sepia h1 {
+  color: #4e342e;
+}
+.theme-sepia #todo-input,
+.theme-sepia #search-input,
+.theme-sepia #priority-select,
+.theme-sepia #due-date-input {
+  background: rgba(244, 236, 222, 0.4);
+  border-color: rgba(210, 196, 172, 0.6);
+  color: #5d4037;
+}
+.theme-sepia #todo-input::placeholder {
+  color: #6d4c41;
+}
+.theme-sepia .tab {
+  border-color: rgba(93, 64, 55, 0.2);
+}
+.theme-sepia #todo-list li {
+  background: rgba(244, 236, 222, 0.2);
+  border-color: rgba(210, 196, 172, 0.3);
+}
+.theme-sepia #todo-list li:hover {
+  background: rgba(244, 236, 222, 0.3);
+  border-color: rgba(210, 196, 172, 0.4);
+}
+.theme-sepia .due-date {
+  background: rgba(93, 64, 55, 0.2);
+  color: #4e342e;
+}
+.theme-sepia .task-edit-input,
+.theme-sepia .task-edit-priority,
+.theme-sepia .task-edit-due-date {
+  background: rgba(244, 236, 222, 0.6);
+  border-color: rgba(210, 196, 172, 0.7);
+  color: #5d4037;
+}
+
+.background-carousel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.background-carousel.hidden {
+  display: none;
+}
+
+.carousel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.carousel-item {
+  position: relative;
+}
+
+.carousel-delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(255, 77, 77, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 1rem;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.carousel-item:hover .carousel-delete-btn {
+  opacity: 1;
+}
+
+.add-image-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-image-card:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.add-image-card span {
+  font-size: 3rem;
+  color: white;
+  opacity: 0.8;
+}
+
+.color-picker-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-picker-card:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.color-picker-card span {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.color-palette {
+  display: none;
+  position: absolute;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 1rem;
+  border-radius: 8px;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 200px;
+  z-index: 101;
+}
+
+.color-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  transition: transform 0.2s;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.carousel-thumbnail {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.carousel-thumbnail:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.8);
 }
 
 h1 {
@@ -566,10 +758,6 @@ input[type="checkbox"] {
   color: #0b2c48;
 }
 
-#todo-list li span {
-  flex-grow: 1;
-}
-
 #todo-list li .delete-btn {
   background: rgba(255, 77, 77, 0.2);
   border: 1px solid rgba(255, 77, 77, 0.4);
@@ -591,4 +779,16 @@ input[type="checkbox"] {
   opacity: 1;
   background: rgba(255, 77, 77, 0.3);
   border-color: rgba(255, 77, 77, 0.6);
+}
+
+@media (max-width: 768px) {
+  .carousel-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-grid {
+    grid-template-columns: 1fr;
+  }
 }

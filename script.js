@@ -11,6 +11,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search-input");
   const prioritySelect = document.getElementById("priority-select");
   const dueDateInput = document.getElementById("due-date-input");
+  const backgroundCarousel = document.getElementById("background-carousel");
+  const carouselGrid = document.getElementById("carousel-grid");
+
+  let defaultBackgrounds = [
+    {
+      url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop",
+      theme: "theme-white",
+    },
+    {
+      url: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2070&auto=format&fit=crop",
+      theme: "theme-skyblue",
+    },
+    {
+      url: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=2070&auto=format&fit=crop",
+      theme: "theme-white",
+    },
+    {
+      url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2072&auto=format&fit=crop",
+      theme: "theme-black",
+    },
+  ];
 
   let state = {
     lists: {
@@ -54,38 +75,75 @@ document.addEventListener("DOMContentLoaded", () => {
     return newState;
   };
 
-  const backgrounds = [
-    {
-      url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto-format&fit=crop",
-      theme: "theme-white",
-    },
-    {
-      url: "https://images.unsplash.com/photo-1511300636412-01634d33dfa6?q=80&w=1974&auto-format&fit=crop",
-      theme: "theme-black",
-    },
-    {
-      url: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2070&auto-format&fit=crop",
-      theme: "theme-skyblue",
-    },
-    {
-      url: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=2070&auto-format&fit=crop",
-      theme: "theme-white",
-    },
-    {
-      url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2072&auto-format&fit=crop",
-      theme: "theme-black",
-    },
-  ];
+  const getResizedImageUrl = (url) => {
+    if (url.includes("&w=") || url.includes("?w=")) {
+      return url; // Assume it's already resized
+    }
+    const urlParts = url.split("?");
+    const newParams = "w=1920&h=1080&fit=crop&q=80";
+    if (urlParts.length > 1) {
+      return `${urlParts[0]}?${urlParts[1]}&${newParams}`;
+    }
+    return `${urlParts[0]}?${newParams}`;
+  };
+
+  const getThemeForImage = async (imageUrl) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = imageUrl;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const data = imageData.data;
+        let brightness = 0;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          brightness += r * 0.299 + g * 0.587 + b * 0.114;
+        }
+
+        brightness /= img.width * img.height;
+
+        // Automatic theme selection based on brightness
+        if (brightness < 85) {
+          resolve("theme-white"); // Very dark images
+        } else if (brightness > 170) {
+          resolve("theme-black"); // Very light images
+        } else if (brightness < 128) {
+          resolve("theme-sepia"); // Mid-dark images
+        } else {
+          resolve("theme-skyblue"); // Mid-light images
+        }
+      };
+      img.onerror = () => {
+        resolve("theme-white"); // Default on error
+      };
+    });
+  };
+
+  const backgrounds = defaultBackgrounds;
   let currentImageIndex = 0;
-  const themes = ["theme-white", "theme-black", "theme-skyblue"];
+  const themes = ["theme-white", "theme-black", "theme-skyblue", "theme-sepia"];
   let currentThemeIndex = 0;
 
   const saveState = () => {
-    chrome.storage.local.set({ appState: state });
+    chrome.storage.sync.set({ appState: state }, () => {
+      if (chrome.runtime.lastError) {
+        console.error("Error saving state:", chrome.runtime.lastError);
+      }
+    });
   };
 
   const applyTheme = (theme) => {
-    container.classList.remove("theme-white", "theme-black", "theme-skyblue");
+    container.classList.remove("theme-white", "theme-black", "theme-skyblue", "theme-sepia");
     container.classList.add(theme);
   };
 
@@ -177,11 +235,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render todos or finished list
     todoList.innerHTML = "";
-    if (state.activeList === "Finished") {
-      addButton.style.display = "none";
-      todoInput.style.display = "none";
-      prioritySelect.style.display = "none";
-      dueDateInput.style.display = "none";
+
+    const isFinishedTab = state.activeList === "Finished";
+
+    // Toggle input visibility
+    const inputs = [addButton, todoInput, prioritySelect, dueDateInput, searchInput];
+    inputs.forEach((input) => (input.style.display = isFinishedTab ? "none" : ""));
+
+    if (isFinishedTab) {
       state.finished.forEach((finishedItem, index) => {
         const li = document.createElement("li");
         li.className = "finished-item";
@@ -207,23 +268,15 @@ document.addEventListener("DOMContentLoaded", () => {
         todoList.appendChild(li);
       });
     } else {
-      addButton.style.display = "";
-      todoInput.style.display = "";
-      prioritySelect.style.display = "";
-      dueDateInput.style.display = "";
       let activeTodos = state.lists[state.activeList] || [];
 
       // Filter by search query
       if (searchQuery.trim()) {
-        activeTodos = activeTodos.filter((task) => {
-          const taskText = typeof task === "string" ? task : task.text;
-          return taskText.toLowerCase().includes(searchQuery.toLowerCase());
-        });
+        activeTodos = activeTodos.filter((task) => task.text.toLowerCase().includes(searchQuery.toLowerCase()));
       }
 
-      activeTodos.forEach((taskObj, index) => {
-        const task = typeof taskObj === "string" ? { text: taskObj, priority: "medium", dueDate: null } : taskObj;
-        const originalIndex = state.lists[state.activeList].indexOf(taskObj);
+      activeTodos.forEach((task, index) => {
+        const originalIndex = state.lists[state.activeList].indexOf(task);
 
         const li = document.createElement("li");
 
@@ -357,18 +410,38 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Load state from storage
-  chrome.storage.local.get(["appState"], (result) => {
+  chrome.storage.sync.get(["appState"], (result) => {
+    if (chrome.runtime.lastError) {
+      console.error("Error loading state:", chrome.runtime.lastError);
+      // Fallback to local storage if sync is unavailable
+      chrome.storage.local.get(["appState"], (localResult) => {
+        if (localResult.appState) {
+          state = migrateState(localResult.appState);
+        }
+        initialize();
+      });
+      return;
+    }
+
     if (result.appState) {
       state = migrateState(result.appState);
     }
+    initialize();
+  });
+
+  const initialize = () => {
     // Set background and theme from loaded state
     currentImageIndex = state.backgroundImageIndex || 0;
+    if (currentImageIndex >= backgrounds.length) {
+      currentImageIndex = 0;
+      state.backgroundImageIndex = 0;
+    }
     const background = backgrounds[currentImageIndex];
-    document.body.style.backgroundImage = `url('${background.url}')`;
+    document.body.style.backgroundImage = `url('${getResizedImageUrl(background.url)}')`;
     applyTheme(background.theme);
     currentThemeIndex = themes.indexOf(background.theme);
     render();
-  });
+  };
 
   const saveBackgroundImage = () => {
     state.backgroundImageIndex = currentImageIndex;
@@ -425,13 +498,145 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   changeBgButton.addEventListener("click", () => {
-    currentImageIndex = (currentImageIndex + 1) % backgrounds.length;
-    const newBackground = backgrounds[currentImageIndex];
-    document.body.style.backgroundImage = `url('${newBackground.url}')`;
-    applyTheme(newBackground.theme);
-    currentThemeIndex = themes.indexOf(newBackground.theme);
-    saveBackgroundImage();
+    populateCarousel();
+    backgroundCarousel.classList.remove("hidden");
   });
+
+  backgroundCarousel.addEventListener("click", (e) => {
+    // Close if clicking on the background overlay
+    if (e.target === backgroundCarousel) {
+      backgroundCarousel.classList.add("hidden");
+    }
+  });
+
+  const populateCarousel = () => {
+    carouselGrid.innerHTML = "";
+    backgrounds.forEach((bg, index) => {
+      const item = document.createElement("div");
+      item.className = "carousel-item";
+
+      const thumb = document.createElement("img");
+      thumb.className = "carousel-thumbnail";
+      thumb.src = getResizedImageUrl(bg.url).replace("w=1920&h=1080", "w=300&h=200");
+      thumb.addEventListener("click", async () => {
+        currentImageIndex = index;
+        const newBackground = backgrounds[currentImageIndex];
+        const theme = await getThemeForImage(thumb.src);
+
+        document.body.style.backgroundImage = `url('${getResizedImageUrl(newBackground.url)}')`;
+        applyTheme(theme);
+        currentThemeIndex = themes.indexOf(theme);
+        state.backgroundImageIndex = currentImageIndex;
+        saveState();
+        backgroundCarousel.classList.add("hidden");
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "carousel-delete-btn";
+      deleteBtn.innerHTML = "&times;";
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteBackground(index);
+      });
+
+      item.appendChild(thumb);
+      item.appendChild(deleteBtn);
+      carouselGrid.appendChild(item);
+    });
+
+    // Add the "Add Image" card
+    const addCard = document.createElement("div");
+    addCard.className = "add-image-card";
+    addCard.innerHTML = "<span>+</span>";
+    addCard.addEventListener("click", addNewBackground);
+    carouselGrid.appendChild(addCard);
+
+    // Add the "Plain Color" card
+    const colorCard = document.createElement("div");
+    colorCard.className = "color-picker-card";
+    colorCard.innerHTML = "<span>Custom Solid<br>Colors</span>";
+    colorCard.addEventListener("click", showColorPalette);
+    carouselGrid.appendChild(colorCard);
+  };
+
+  const addNewBackground = () => {
+    const url = prompt("Please enter the Unsplash image URL:");
+    if (url && url.startsWith("https://images.unsplash.com/")) {
+      const resizedUrl = getResizedImageUrl(url);
+      getThemeForImage(resizedUrl.replace("w=1920&h=1080", "w=300&h=200")).then((theme) => {
+        backgrounds.push({ url: resizedUrl, theme: theme });
+        saveState();
+        populateCarousel();
+      });
+    } else if (url) {
+      alert("Invalid URL. Please use a valid Unsplash image URL.");
+    }
+  };
+
+  const showColorPalette = () => {
+    const palette = document.createElement("div");
+    palette.className = "color-palette";
+    palette.style.display = "flex";
+
+    const colors = ["#f4f4f9", "#2c3e50", "#8e44ad", "#2980b9", "#16a085", "#d35400"];
+    colors.forEach((color) => {
+      const swatch = document.createElement("div");
+      swatch.className = "color-swatch";
+      swatch.style.backgroundColor = color;
+      swatch.addEventListener("click", () => {
+        document.body.style.backgroundImage = "none";
+        document.body.style.backgroundColor = color;
+        // A simple logic to choose a contrasting theme
+        const isDark =
+          parseInt(color.substr(1, 2), 16) * 0.299 +
+            parseInt(color.substr(3, 2), 16) * 0.587 +
+            parseInt(color.substr(5, 2), 16) * 0.114 <
+          186;
+        const theme = isDark ? "theme-white" : "theme-black";
+        applyTheme(theme);
+        backgroundCarousel.classList.add("hidden");
+        palette.remove();
+      });
+      palette.appendChild(swatch);
+    });
+
+    backgroundCarousel.appendChild(palette);
+
+    // Close palette when clicking outside
+    setTimeout(() => {
+      const clickOutside = (e) => {
+        if (!palette.contains(e.target)) {
+          palette.remove();
+          document.removeEventListener("click", clickOutside);
+        }
+      };
+      document.addEventListener("click", clickOutside);
+    }, 0);
+  };
+
+  const deleteBackground = (index) => {
+    backgrounds.splice(index, 1);
+
+    if (currentImageIndex === index) {
+      currentImageIndex = 0;
+      state.backgroundImageIndex = 0;
+      if (backgrounds.length > 0) {
+        const newBackground = backgrounds[0];
+        document.body.style.backgroundImage = `url('${getResizedImageUrl(newBackground.url)}')`;
+        applyTheme(newBackground.theme);
+      } else {
+        document.body.style.backgroundImage = "none";
+        document.body.style.backgroundColor = "#f4f4f9";
+        applyTheme("theme-white"); // Apply a default theme
+      }
+    } else if (currentImageIndex > index) {
+      currentImageIndex--;
+      state.backgroundImageIndex = currentImageIndex;
+    }
+
+    saveState();
+    populateCarousel();
+  };
 
   changeThemeButton.addEventListener("click", () => {
     currentThemeIndex = (currentThemeIndex + 1) % themes.length;
