@@ -1,0 +1,25 @@
+<svg fill="none" viewBox="0 0 800 100" width="800" height="100" xmlns="http://www.w3.org/2000/svg">
+    <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml">
+            <style>
+                .container {
+                    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100%;
+                }
+                .title {
+                    font-size: 50px;
+                    font-weight: 700;
+                    background: linear-gradient(90deg, #F97316, #FBBF24, #F59E0B);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+            </style>
+            <div class="container">
+                <div class="title">To-Do List New Tab</div>
+            </div>
+        </div>
+    </foreignObject>
+</svg>
