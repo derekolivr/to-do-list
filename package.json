@@ -12,7 +12,9 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@reorx/webpack-ext-reloader": "^1.6.3",
     "@types/chrome": "^0.1.27",
+    "copy-webpack-plugin": "^13.0.1",
     "serve": "^14.2.5",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
