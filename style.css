@@ -519,6 +519,19 @@ h1 {
   border-radius: 8px;
   display: flex;
   justify-content: space-between;
+  cursor: grab;
+  transition: transform 0.15s, opacity 0.15s, border-color 0.15s;
+}
+
+#todo-list li.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+#todo-list li.drag-over {
+  border-color: #7d5fff;
+  border-width: 2px;
+  border-style: dashed;
 }
 
 input[type="checkbox"] {

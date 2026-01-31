@@ -86,6 +86,7 @@ let state: State = {
 };
 
 let searchQuery = "";
+let draggedIndex: number | null = null;
 
 // Migrate old string-based tasks to object format
 const migrateTasks = (tasks: (Task | string)[]): Task[] => {
@@ -387,6 +388,45 @@ const render = () => {
       ).indexOf(task);
 
       const li = document.createElement("li");
+      li.draggable = true;
+      li.dataset.index = String(originalIndex);
+
+      // Drag event handlers
+      li.addEventListener("dragstart", (e) => {
+        draggedIndex = originalIndex;
+        li.classList.add("dragging");
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = "move";
+        }
+      });
+
+      li.addEventListener("dragend", () => {
+        li.classList.remove("dragging");
+        draggedIndex = null;
+        // Remove all drag-over classes
+        document.querySelectorAll(".drag-over").forEach((el) => {
+          el.classList.remove("drag-over");
+        });
+      });
+
+      li.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (draggedIndex !== null && draggedIndex !== originalIndex) {
+          li.classList.add("drag-over");
+        }
+      });
+
+      li.addEventListener("dragleave", () => {
+        li.classList.remove("drag-over");
+      });
+
+      li.addEventListener("drop", (e) => {
+        e.preventDefault();
+        li.classList.remove("drag-over");
+        if (draggedIndex !== null && draggedIndex !== originalIndex) {
+          reorderTask(draggedIndex, originalIndex);
+        }
+      });
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
@@ -637,6 +677,18 @@ const addTodo = () => {
 const removeTodo = (index: number) => {
   if (state.activeList !== "Finished") {
     state.lists[state.activeList]?.splice(index, 1);
+    saveState();
+    render();
+  }
+};
+
+const reorderTask = (fromIndex: number, toIndex: number) => {
+  const list = state.lists[state.activeList];
+  if (!list) return;
+
+  const [movedTask] = list.splice(fromIndex, 1);
+  if (movedTask) {
+    list.splice(toIndex, 0, movedTask);
     saveState();
     render();
   }
