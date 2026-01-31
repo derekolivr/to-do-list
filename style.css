@@ -38,7 +38,8 @@ body::before {
 
 #change-bg-button,
 #change-theme-button,
-#theme-lock-button {
+#theme-lock-button,
+#links-button {
   padding: 0.5rem 1rem;
   background-color: rgba(0, 0, 0, 0.2);
   color: rgba(255, 255, 255, 0.8);
@@ -53,9 +54,100 @@ body::before {
 
 #change-bg-button:hover,
 #change-theme-button:hover,
-#theme-lock-button:hover {
+#theme-lock-button:hover,
+#links-button:hover {
   background-color: rgba(0, 0, 0, 0.4);
   color: white;
+}
+
+/* Quick Links Panel */
+.links-panel {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  margin-top: 180px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 1rem;
+  min-width: 200px;
+  max-width: 300px;
+  z-index: 100;
+  color: white;
+}
+
+.links-panel.hidden {
+  display: none;
+}
+
+.links-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.links-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.add-link-btn {
+  background: rgba(125, 95, 255, 0.8);
+  border: none;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.add-link-btn:hover {
+  background: rgba(125, 95, 255, 1);
+}
+
+.links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.link-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.link-item a {
+  color: #87ceeb;
+  text-decoration: none;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-item a:hover {
+  text-decoration: underline;
+}
+
+.link-delete-btn {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0 0.25rem;
+  opacity: 0.7;
+}
+
+.link-delete-btn:hover {
+  opacity: 1;
 }
 
 .container {

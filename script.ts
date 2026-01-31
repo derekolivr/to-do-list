@@ -9,6 +9,11 @@ interface FinishedTask {
   originalList: string;
 }
 
+interface QuickLink {
+  name: string;
+  url: string;
+}
+
 interface State {
   lists: {
     [key: string]: Task[];
@@ -19,6 +24,7 @@ interface State {
   customBackgrounds: Background[];
   currentTheme: string;
   themeLocked: boolean;
+  quickLinks: QuickLink[];
 }
 
 interface Background {
@@ -83,6 +89,7 @@ let state: State = {
   customBackgrounds: [],
   currentTheme: "theme-white",
   themeLocked: false,
+  quickLinks: [],
 };
 
 let searchQuery = "";
@@ -129,6 +136,9 @@ const migrateState = (oldState: any): State => {
   }
   if (newState.themeLocked === undefined) {
     newState.themeLocked = false;
+  }
+  if (!newState.quickLinks) {
+    newState.quickLinks = [];
   }
   Object.keys(newState.lists).forEach((listName) => {
     newState.lists[listName] = migrateTasks(newState.lists[listName] || []);
@@ -933,6 +943,69 @@ themeLockButton.addEventListener("click", () => {
   saveState();
 });
 
+// Quick Links feature
+const linksButton = document.createElement("button");
+linksButton.id = "links-button";
+linksButton.textContent = "Links";
+document.querySelector(".controls-container")?.appendChild(linksButton);
+
+const linksPanel = document.createElement("div");
+linksPanel.id = "links-panel";
+linksPanel.className = "links-panel hidden";
+document.body.appendChild(linksPanel);
+
+const renderLinksPanel = () => {
+  linksPanel.innerHTML = `
+    <div class="links-header">
+      <h3>Quick Links</h3>
+      <button class="add-link-btn">+ Add Link</button>
+    </div>
+    <div class="links-list"></div>
+  `;
+
+  const linksList = linksPanel.querySelector(".links-list") as HTMLDivElement;
+  const addLinkBtn = linksPanel.querySelector(".add-link-btn") as HTMLButtonElement;
+
+  state.quickLinks.forEach((link, index) => {
+    const linkItem = document.createElement("div");
+    linkItem.className = "link-item";
+    linkItem.innerHTML = `
+      <a href="${link.url}" target="_blank" rel="noopener noreferrer">${link.name}</a>
+      <button class="link-delete-btn" data-index="${index}">&times;</button>
+    `;
+    linksList.appendChild(linkItem);
+  });
+
+  // Add link button handler
+  addLinkBtn.addEventListener("click", () => {
+    const name = prompt("Link name:");
+    if (!name) return;
+    const url = prompt("Link URL:");
+    if (!url) return;
+    state.quickLinks.push({ name, url: url.startsWith("http") ? url : `https://${url}` });
+    saveState();
+    renderLinksPanel();
+  });
+
+  // Delete link handlers
+  linksList.querySelectorAll(".link-delete-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const index = parseInt((e.target as HTMLButtonElement).dataset.index || "0");
+      state.quickLinks.splice(index, 1);
+      saveState();
+      renderLinksPanel();
+    });
+  });
+};
+
+linksButton.addEventListener("click", (e) => {
+  e.stopPropagation();
+  linksPanel.classList.toggle("hidden");
+  if (!linksPanel.classList.contains("hidden")) {
+    renderLinksPanel();
+  }
+});
+
 // Global click handler to close menus when clicking outside
 document.addEventListener("click", (e) => {
   const target = e.target as HTMLElement;
@@ -941,5 +1014,10 @@ document.addEventListener("click", (e) => {
   const editingTask = document.querySelector("#todo-list li.editing");
   if (editingTask && !editingTask.contains(target)) {
     render(); // Re-render to exit edit mode
+  }
+
+  // Close links panel when clicking outside
+  if (!linksPanel.contains(target) && target !== linksButton) {
+    linksPanel.classList.add("hidden");
   }
 });
