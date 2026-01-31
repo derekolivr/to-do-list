@@ -405,11 +405,12 @@ const render = () => {
       li.className = "finished-item";
 
       const contentSpan = document.createElement("span");
+      contentSpan.className = "finished-task-text";
       contentSpan.textContent = finishedItem.task.text;
 
       const listBadge = document.createElement("span");
       listBadge.className = "original-list-badge";
-      listBadge.textContent = `from: ${finishedItem.originalList}`;
+      listBadge.textContent = `from ${finishedItem.originalList}`;
 
       const restoreButton = document.createElement("button");
       restoreButton.className = "restore-btn";

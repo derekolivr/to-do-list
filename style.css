@@ -697,14 +697,19 @@ input[type="checkbox"] {
   font-size: 1.1rem; /* Increase font size */
 }
 
-.finished-item span {
+.finished-item .finished-task-text {
   text-decoration: line-through;
-  font-size: 1.1rem; /* Ensure this overrides other styles */
+  font-size: 1.1rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
 }
 
 .finished-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
