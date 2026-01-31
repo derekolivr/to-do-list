@@ -218,24 +218,27 @@ const formatDate = (
   dateString: string | null
 ): { text: string; class: string } | null => {
   if (!dateString) return null;
-  const date = new Date(dateString + "T00:00:00"); // Add time to avoid timezone issues
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const taskDate = new Date(date);
+
+  // Parse the date string as local date (YYYY-MM-DD format from input)
+  const [year, month, day] = dateString.split("-").map(Number);
+  const taskDate = new Date(year!, month! - 1, day!);
   taskDate.setHours(0, 0, 0, 0);
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const diffTime = taskDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) {
-    const formattedDate = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const formattedDate = taskDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return { text: `Overdue (${formattedDate})`, class: "overdue" };
   } else if (diffDays === 0) {
     return { text: "Today", class: "today" };
   } else if (diffDays === 1) {
     return { text: "Tomorrow", class: "" };
   } else {
-    const formattedDate = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const formattedDate = taskDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return { text: formattedDate, class: "" };
   }
 };
@@ -468,9 +471,9 @@ const editTask = (index: number, liElement: HTMLLIElement) => {
       saveState();
       render();
     } else {
-      // If text is empty, revert
-      liElement.innerHTML = originalContent;
+      // If text is empty, revert and re-render to restore event listeners
       liElement.classList.remove("editing");
+      render();
     }
   };
 
@@ -786,5 +789,16 @@ changeThemeButton.addEventListener("click", () => {
   const newTheme = themes[currentThemeIndex];
   if (newTheme) {
     applyTheme(newTheme);
+  }
+});
+
+// Global click handler to close menus when clicking outside
+document.addEventListener("click", (e) => {
+  const target = e.target as HTMLElement;
+
+  // Close edit mode on tasks when clicking outside
+  const editingTask = document.querySelector("#todo-list li.editing");
+  if (editingTask && !editingTask.contains(target)) {
+    render(); // Re-render to exit edit mode
   }
 });
