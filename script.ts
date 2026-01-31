@@ -14,6 +14,12 @@ interface QuickLink {
   url: string;
 }
 
+interface DailyTask {
+  text: string;
+  priority: "high" | "medium" | "low";
+  completedToday: boolean;
+}
+
 interface State {
   lists: {
     [key: string]: Task[];
@@ -25,6 +31,8 @@ interface State {
   currentTheme: string;
   themeLocked: boolean;
   quickLinks: QuickLink[];
+  dailyTasks: DailyTask[];
+  lastDailyReset: string | null;
 }
 
 interface Background {
@@ -90,6 +98,8 @@ let state: State = {
   currentTheme: "theme-white",
   themeLocked: false,
   quickLinks: [],
+  dailyTasks: [],
+  lastDailyReset: null,
 };
 
 let searchQuery = "";
@@ -139,6 +149,12 @@ const migrateState = (oldState: any): State => {
   }
   if (!newState.quickLinks) {
     newState.quickLinks = [];
+  }
+  if (!newState.dailyTasks) {
+    newState.dailyTasks = [];
+  }
+  if (!newState.lastDailyReset) {
+    newState.lastDailyReset = null;
   }
   Object.keys(newState.lists).forEach((listName) => {
     newState.lists[listName] = migrateTasks(newState.lists[listName] || []);
@@ -242,6 +258,18 @@ const applyTheme = (theme: string) => {
   container.classList.add(theme);
 };
 
+const resetDailyTasksIfNewDay = () => {
+  const today = new Date().toISOString().split("T")[0] || ""; // YYYY-MM-DD
+  if (state.lastDailyReset !== today) {
+    // Reset all daily tasks to not completed
+    state.dailyTasks.forEach((task) => {
+      task.completedToday = false;
+    });
+    state.lastDailyReset = today;
+    saveState();
+  }
+};
+
 const formatDate = (
   dateString: string | null
 ): { text: string; class: string } | null => {
@@ -335,6 +363,19 @@ const render = () => {
   });
   tabsContainer.appendChild(finishedTab);
 
+  // Add Daily tab
+  const dailyTab = document.createElement("div");
+  dailyTab.textContent = "Daily";
+  dailyTab.className = "tab";
+  if (state.activeList === "Daily") {
+    dailyTab.classList.add("active");
+  }
+  dailyTab.addEventListener("click", () => {
+    state.activeList = "Daily";
+    render();
+  });
+  tabsContainer.appendChild(dailyTab);
+
   // Render title
   listTitle.textContent = state.activeList;
 
@@ -342,6 +383,7 @@ const render = () => {
   todoList.innerHTML = "";
 
   const isFinishedTab = state.activeList === "Finished";
+  const isDailyTab = state.activeList === "Daily";
 
   // Toggle input visibility
   const inputs = [
@@ -352,7 +394,7 @@ const render = () => {
     searchInput,
   ];
   inputs.forEach(
-    (input) => (input.style.display = isFinishedTab ? "none" : "")
+    (input) => (input.style.display = (isFinishedTab || isDailyTab) ? "none" : "")
   );
 
   if (isFinishedTab) {
@@ -381,6 +423,64 @@ const render = () => {
       if (todoList) {
         todoList.appendChild(li);
       }
+    });
+  } else if (isDailyTab) {
+    // Render Daily tasks
+    // Add "Add Daily Task" button at top
+    const addDailyBtn = document.createElement("button");
+    addDailyBtn.className = "add-daily-btn";
+    addDailyBtn.textContent = "+ Add Daily Task";
+    addDailyBtn.addEventListener("click", () => {
+      const text = prompt("Enter daily task:");
+      if (text) {
+        state.dailyTasks.push({ text, priority: "medium", completedToday: false });
+        saveState();
+        render();
+      }
+    });
+    todoList.appendChild(addDailyBtn);
+
+    state.dailyTasks.forEach((task, index) => {
+      const li = document.createElement("li");
+      li.className = task.completedToday ? "daily-item completed" : "daily-item";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = task.completedToday;
+      checkbox.addEventListener("change", () => {
+        state.dailyTasks[index]!.completedToday = checkbox.checked;
+        saveState();
+        render();
+      });
+
+      const taskContent = document.createElement("div");
+      taskContent.className = "task-content";
+
+      const priorityBadge = document.createElement("span");
+      priorityBadge.className = `priority-badge priority-${task.priority}`;
+      priorityBadge.textContent = task.priority;
+
+      const taskText = document.createElement("span");
+      taskText.className = "task-text";
+      taskText.textContent = task.text;
+
+      taskContent.appendChild(priorityBadge);
+      taskContent.appendChild(taskText);
+
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "×";
+      deleteButton.classList.add("delete-btn");
+      deleteButton.title = "Remove from daily tasks";
+      deleteButton.addEventListener("click", () => {
+        state.dailyTasks.splice(index, 1);
+        saveState();
+        render();
+      });
+
+      li.appendChild(checkbox);
+      li.appendChild(taskContent);
+      li.appendChild(deleteButton);
+      todoList.appendChild(li);
     });
   } else {
     let activeTodos = state.lists[state.activeList] || [];
@@ -629,6 +729,9 @@ const loadState = () => {
 };
 
 const initialize = () => {
+  // Reset daily tasks if it's a new day
+  resetDailyTasksIfNewDay();
+
   // Set background and theme from loaded state
   const backgrounds = getBackgrounds();
   currentImageIndex = state.backgroundImageIndex || 0;
