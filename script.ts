@@ -1124,3 +1124,100 @@ document.addEventListener("click", (e) => {
     linksPanel.classList.add("hidden");
   }
 });
+
+// CSV Import/Export
+const importCsvButton = document.getElementById("import-csv-button") as HTMLButtonElement;
+const exportCsvButton = document.getElementById("export-csv-button") as HTMLButtonElement;
+const csvFileInput = document.getElementById("csv-file-input") as HTMLInputElement;
+
+const exportToCsv = () => {
+  const list = state.lists[state.activeList];
+  if (!list || list.length === 0) {
+    alert("No tasks to export in the current list.");
+    return;
+  }
+
+  const csvRows = ["text,priority,dueDate"];
+  list.forEach((task) => {
+    const text = task.text.replace(/"/g, '""'); // Escape quotes
+    csvRows.push(`"${text}","${task.priority}","${task.dueDate || ""}"`);
+  });
+
+  const csvContent = csvRows.join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${state.activeList.replace(/[^a-z0-9]/gi, "_")}_tasks.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const importFromCsv = (file: File) => {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const content = e.target?.result as string;
+    if (!content) return;
+
+    const lines = content.split("\n").filter((line) => line.trim());
+    const hasHeader = lines[0]?.toLowerCase().includes("text");
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+
+    let imported = 0;
+    dataLines.forEach((line) => {
+      // Parse CSV line (handle quoted fields)
+      const matches = line.match(/("(?:[^"]|"")*"|[^,]*),("(?:[^"]|"")*"|[^,]*),("(?:[^"]|"")*"|[^,]*)?/);
+      if (matches) {
+        const text = matches[1]?.replace(/^"|"$/g, "").replace(/""/g, '"') || "";
+        const priority = (matches[2]?.replace(/^"|"$/g, "") as "high" | "medium" | "low") || "medium";
+        const dueDate = matches[3]?.replace(/^"|"$/g, "") || null;
+
+        if (text.trim()) {
+          if (!state.lists[state.activeList]) {
+            state.lists[state.activeList] = [];
+          }
+          state.lists[state.activeList]!.push({
+            text: text.trim(),
+            priority: ["high", "medium", "low"].includes(priority) ? priority : "medium",
+            dueDate: dueDate || null,
+          });
+          imported++;
+        }
+      }
+    });
+
+    if (imported > 0) {
+      saveState();
+      render();
+      alert(`Imported ${imported} task(s) to "${state.activeList}".`);
+    } else {
+      alert("No valid tasks found in the CSV file.");
+    }
+  };
+  reader.readAsText(file);
+};
+
+exportCsvButton.addEventListener("click", () => {
+  if (state.activeList === "Finished" || state.activeList === "Daily") {
+    alert("Export is only available for regular task lists.");
+    return;
+  }
+  exportToCsv();
+});
+
+importCsvButton.addEventListener("click", () => {
+  if (state.activeList === "Finished" || state.activeList === "Daily") {
+    alert("Import is only available for regular task lists.");
+    return;
+  }
+  csvFileInput.click();
+});
+
+csvFileInput.addEventListener("change", () => {
+  const file = csvFileInput.files?.[0];
+  if (file) {
+    importFromCsv(file);
+    csvFileInput.value = ""; // Reset for next import
+  }
+});

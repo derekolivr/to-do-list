@@ -14,8 +14,13 @@
     <div class="container">
       <div class="list-header">
         <div id="tabs-container" class="tabs-container"></div>
-        <button id="add-list-button">+</button>
+        <div class="list-actions">
+          <button id="import-csv-button" title="Import CSV">Import</button>
+          <button id="export-csv-button" title="Export CSV">Export</button>
+          <button id="add-list-button">+</button>
+        </div>
       </div>
+      <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
       <h1 id="list-title">My To-Do List</h1>
       <div class="search-container">
         <input type="text" id="search-input" placeholder="Search tasks..." />

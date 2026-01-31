@@ -204,6 +204,30 @@ body::before {
   margin-bottom: 0.5rem;
 }
 
+.list-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#import-csv-button,
+#export-csv-button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#import-csv-button:hover,
+#export-csv-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 .tabs-container {
   display: flex;
   gap: 0.5rem;
