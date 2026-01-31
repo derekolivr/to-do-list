@@ -26,7 +26,7 @@ interface Background {
   theme?: string;
 }
 
-const todoInput = document.getElementById("todo-input") as HTMLInputElement;
+const todoInput = document.getElementById("todo-input") as HTMLTextAreaElement;
 const addButton = document.getElementById("add-button") as HTMLButtonElement;
 const todoList = document.getElementById("todo-list") as HTMLUListElement;
 const changeBgButton = document.getElementById(
@@ -445,9 +445,11 @@ const editTask = (index: number, liElement: HTMLLIElement) => {
   liElement.classList.add("editing");
   const originalContent = liElement.innerHTML;
 
+  // Escape HTML in task text for safe insertion
+  const escapedText = task.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
   liElement.innerHTML = `
       <div class="task-edit-container">
-          <input type="text" class="task-edit-input" value="${task.text}">
+          <textarea class="task-edit-input" rows="1">${escapedText}</textarea>
           <select class="task-edit-priority">
               <option value="high" ${task.priority === "high" ? "selected" : ""}>High</option>
               <option value="medium" ${task.priority === "medium" ? "selected" : ""}>Medium</option>
@@ -467,7 +469,7 @@ const editTask = (index: number, liElement: HTMLLIElement) => {
   ) as HTMLButtonElement;
   const textInput = liElement.querySelector(
     ".task-edit-input"
-  ) as HTMLInputElement;
+  ) as HTMLTextAreaElement;
   const priorityInput = liElement.querySelector(
     ".task-edit-priority"
   ) as HTMLSelectElement;
@@ -503,9 +505,20 @@ const editTask = (index: number, liElement: HTMLLIElement) => {
     render();
   });
 
-  textInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") saveEdit();
+  textInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      saveEdit();
+    }
   });
+
+  // Auto-resize edit textarea
+  const resizeTextarea = () => {
+    textInput.style.height = "auto";
+    textInput.style.height = textInput.scrollHeight + "px";
+  };
+  textInput.addEventListener("input", resizeTextarea);
+  resizeTextarea(); // Initial resize
 };
 
 const completeTodo = (index: number) => {
@@ -613,6 +626,7 @@ const addTodo = () => {
       dueDate,
     });
     todoInput.value = "";
+    todoInput.style.height = "auto"; // Reset textarea height
     dueDateInput.value = "";
     prioritySelect.value = "medium";
     saveState();
@@ -646,10 +660,17 @@ searchInput.addEventListener("input", (e) => {
 });
 
 addButton.addEventListener("click", addTodo);
-todoInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
+todoInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault(); // Prevent new line
     addTodo();
   }
+});
+
+// Auto-resize textarea
+todoInput.addEventListener("input", () => {
+  todoInput.style.height = "auto";
+  todoInput.style.height = todoInput.scrollHeight + "px";
 });
 
 changeBgButton.addEventListener("click", () => {
