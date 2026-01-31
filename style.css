@@ -37,7 +37,8 @@ body::before {
 }
 
 #change-bg-button,
-#change-theme-button {
+#change-theme-button,
+#theme-lock-button {
   padding: 0.5rem 1rem;
   background-color: rgba(0, 0, 0, 0.2);
   color: rgba(255, 255, 255, 0.8);
@@ -51,7 +52,8 @@ body::before {
 }
 
 #change-bg-button:hover,
-#change-theme-button:hover {
+#change-theme-button:hover,
+#theme-lock-button:hover {
   background-color: rgba(0, 0, 0, 0.4);
   color: white;
 }

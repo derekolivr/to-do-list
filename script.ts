@@ -16,6 +16,9 @@ interface State {
   finished: FinishedTask[];
   activeList: string;
   backgroundImageIndex: number;
+  customBackgrounds: Background[];
+  currentTheme: string;
+  themeLocked: boolean;
 }
 
 interface Background {
@@ -77,6 +80,9 @@ let state: State = {
   finished: [],
   activeList: "To-Do",
   backgroundImageIndex: 0,
+  customBackgrounds: [],
+  currentTheme: "theme-white",
+  themeLocked: false,
 };
 
 let searchQuery = "";
@@ -113,6 +119,15 @@ const migrateState = (oldState: any): State => {
   }
   if (!newState.finished) {
     newState.finished = [];
+  }
+  if (!newState.customBackgrounds) {
+    newState.customBackgrounds = [];
+  }
+  if (!newState.currentTheme) {
+    newState.currentTheme = "theme-white";
+  }
+  if (newState.themeLocked === undefined) {
+    newState.themeLocked = false;
   }
   Object.keys(newState.lists).forEach((listName) => {
     newState.lists[listName] = migrateTasks(newState.lists[listName] || []);
@@ -179,7 +194,9 @@ const getThemeForImage = async (imageUrl: string): Promise<string> => {
   });
 };
 
-const backgrounds: Background[] = defaultBackgrounds;
+const getBackgrounds = (): Background[] => {
+  return [...defaultBackgrounds, ...state.customBackgrounds];
+};
 let currentImageIndex = 0;
 const themes = [
   "theme-white",
@@ -550,6 +567,7 @@ const loadState = () => {
 
 const initialize = () => {
   // Set background and theme from loaded state
+  const backgrounds = getBackgrounds();
   currentImageIndex = state.backgroundImageIndex || 0;
   if (currentImageIndex >= backgrounds.length) {
     currentImageIndex = 0;
@@ -560,11 +578,17 @@ const initialize = () => {
     document.body.style.backgroundImage = `url('${getResizedImageUrl(
       background.url
     )}')`;
-    if (background.theme) {
-      applyTheme(background.theme);
-      currentThemeIndex = themes.indexOf(background.theme);
-    }
   }
+  // Apply saved theme (or use background theme if not locked)
+  if (state.currentTheme) {
+    applyTheme(state.currentTheme);
+    currentThemeIndex = themes.indexOf(state.currentTheme);
+  } else if (background?.theme) {
+    applyTheme(background.theme);
+    currentThemeIndex = themes.indexOf(background.theme);
+  }
+  // Update theme lock button state after DOM is ready
+  setTimeout(() => updateThemeLockButton(), 0);
   render();
 };
 
@@ -642,9 +666,13 @@ backgroundCarousel.addEventListener("click", (e) => {
 
 const populateCarousel = () => {
   carouselGrid.innerHTML = "";
+  const backgrounds = getBackgrounds();
+  const defaultCount = defaultBackgrounds.length;
+
   backgrounds.forEach((bg, index) => {
     const item = document.createElement("div");
     item.className = "carousel-item";
+    const isCustom = index >= defaultCount;
 
     const thumb = document.createElement("img");
     thumb.className = "carousel-thumbnail";
@@ -655,14 +683,18 @@ const populateCarousel = () => {
     thumb.addEventListener("click", async () => {
       currentImageIndex = index;
       const newBackground = backgrounds[currentImageIndex];
-      const theme = await getThemeForImage(thumb.src);
 
       if (newBackground) {
         document.body.style.backgroundImage = `url('${getResizedImageUrl(
           newBackground.url
         )}')`;
-        applyTheme(theme as string);
-        currentThemeIndex = themes.indexOf(theme as string);
+        // Only auto-detect theme if not locked
+        if (!state.themeLocked) {
+          const theme = await getThemeForImage(thumb.src);
+          applyTheme(theme as string);
+          currentThemeIndex = themes.indexOf(theme as string);
+          state.currentTheme = theme as string;
+        }
       }
       state.backgroundImageIndex = currentImageIndex;
       saveState();
@@ -672,10 +704,15 @@ const populateCarousel = () => {
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "carousel-delete-btn";
     deleteBtn.innerHTML = "&times;";
-    deleteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      deleteBackground(index);
-    });
+    // Only allow deleting custom backgrounds
+    if (isCustom) {
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteBackground(index);
+      });
+    } else {
+      deleteBtn.style.display = "none";
+    }
 
     item.appendChild(thumb);
     item.appendChild(deleteBtn);
@@ -704,7 +741,7 @@ const addNewBackground = () => {
     getThemeForImage(
       resizedUrl.replace("w=1920&h=1080", "w=300&h=200")
     ).then((theme) => {
-      backgrounds.push({ url: resizedUrl, theme: theme as string });
+      state.customBackgrounds.push({ url: resizedUrl, theme: theme as string });
       saveState();
       populateCarousel();
     });
@@ -726,14 +763,18 @@ const showColorPalette = () => {
     swatch.addEventListener("click", () => {
       document.body.style.backgroundImage = "none";
       document.body.style.backgroundColor = color;
-      // A simple logic to choose a contrasting theme
-      const isDark =
-        parseInt(color.substr(1, 2), 16) * 0.299 +
-        parseInt(color.substr(3, 2), 16) * 0.587 +
-        parseInt(color.substr(5, 2), 16) * 0.114 <
-        186;
-      const theme = isDark ? "theme-white" : "theme-black";
-      applyTheme(theme);
+      // Only auto-detect theme if not locked
+      if (!state.themeLocked) {
+        const isDark =
+          parseInt(color.slice(1, 3), 16) * 0.299 +
+          parseInt(color.slice(3, 5), 16) * 0.587 +
+          parseInt(color.slice(5, 7), 16) * 0.114 <
+          186;
+        const theme = isDark ? "theme-white" : "theme-black";
+        applyTheme(theme);
+        state.currentTheme = theme;
+        saveState();
+      }
       backgroundCarousel.classList.add("hidden");
       palette.remove();
     });
@@ -755,8 +796,14 @@ const showColorPalette = () => {
 };
 
 const deleteBackground = (index: number) => {
-  backgrounds.splice(index, 1);
+  const defaultCount = defaultBackgrounds.length;
+  // Only allow deleting custom backgrounds
+  if (index < defaultCount) return;
 
+  const customIndex = index - defaultCount;
+  state.customBackgrounds.splice(customIndex, 1);
+
+  const backgrounds = getBackgrounds();
   if (currentImageIndex === index) {
     currentImageIndex = 0;
     state.backgroundImageIndex = 0;
@@ -766,14 +813,15 @@ const deleteBackground = (index: number) => {
         document.body.style.backgroundImage = `url('${getResizedImageUrl(
           newBackground.url
         )}')`;
-        if (newBackground.theme) {
+        if (!state.themeLocked && newBackground.theme) {
           applyTheme(newBackground.theme);
+          state.currentTheme = newBackground.theme;
         }
       }
     } else {
       document.body.style.backgroundImage = "none";
       document.body.style.backgroundColor = "#f4f4f9";
-      applyTheme("theme-white"); // Apply a default theme
+      applyTheme("theme-white");
     }
   } else if (currentImageIndex > index) {
     currentImageIndex--;
@@ -789,7 +837,27 @@ changeThemeButton.addEventListener("click", () => {
   const newTheme = themes[currentThemeIndex];
   if (newTheme) {
     applyTheme(newTheme);
+    state.currentTheme = newTheme;
+    state.themeLocked = true; // Lock theme when manually changed
+    updateThemeLockButton();
+    saveState();
   }
+});
+
+// Theme lock button
+const themeLockButton = document.createElement("button");
+themeLockButton.id = "theme-lock-button";
+themeLockButton.textContent = "🔓 Auto";
+document.querySelector(".controls-container")?.appendChild(themeLockButton);
+
+const updateThemeLockButton = () => {
+  themeLockButton.textContent = state.themeLocked ? "🔒 Locked" : "🔓 Auto";
+};
+
+themeLockButton.addEventListener("click", () => {
+  state.themeLocked = !state.themeLocked;
+  updateThemeLockButton();
+  saveState();
 });
 
 // Global click handler to close menus when clicking outside
