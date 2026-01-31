@@ -391,11 +391,13 @@ const render = () => {
     todoInput,
     prioritySelect,
     dueDateInput,
-    searchInput,
   ];
   inputs.forEach(
     (input) => (input.style.display = (isFinishedTab || isDailyTab) ? "none" : "")
   );
+  // Hide search on special tabs
+  const searchContainer = document.querySelector(".search-container") as HTMLElement;
+  searchContainer.style.display = (isFinishedTab || isDailyTab) ? "none" : "";
 
   if (isFinishedTab) {
     state.finished.forEach((finishedItem, index) => {
@@ -816,6 +818,20 @@ addListButton.addEventListener("click", () => {
     render();
   } else if (newListName) {
     alert("A list with this name already exists.");
+  }
+});
+
+const searchToggle = document.getElementById("search-toggle") as HTMLButtonElement;
+
+searchToggle.addEventListener("click", () => {
+  searchInput.classList.toggle("hidden");
+  searchToggle.classList.toggle("active");
+  if (!searchInput.classList.contains("hidden")) {
+    searchInput.focus();
+  } else {
+    searchInput.value = "";
+    searchQuery = "";
+    render();
   }
 });
 

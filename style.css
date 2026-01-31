@@ -652,6 +652,7 @@ h1 {
   margin: 0;
   overflow-y: auto; /* Add scroll for many items */
   flex-grow: 1; /* Allow list to expand */
+  max-height: 350px; /* Prevent overflow */
 }
 
 #todo-list li {
@@ -748,15 +749,42 @@ input[type="checkbox"] {
 
 .search-container {
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  color: inherit;
+}
+
+.search-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.search-toggle.active {
+  background: rgba(125, 95, 255, 0.3);
+  border-color: rgba(125, 95, 255, 0.5);
 }
 
 #search-input {
-  width: 100%;
+  flex: 1;
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1.1rem;
   box-sizing: border-box;
+}
+
+#search-input.hidden {
+  display: none;
 }
 
 #search-input:focus {

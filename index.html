@@ -23,10 +23,11 @@
       <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
       <h1 id="list-title">My To-Do List</h1>
       <div class="search-container">
-        <input type="text" id="search-input" placeholder="Search tasks..." />
+        <button id="search-toggle" class="search-toggle" title="Search">🔍</button>
+        <input type="text" id="search-input" class="hidden" placeholder="Search tasks..." />
       </div>
       <div class="input-container">
-        <textarea id="todo-input" placeholder="Add a new to-do... (Shift+Enter for new line)" rows="1"></textarea>
+        <textarea id="todo-input" placeholder="Add to-do... (Shift+Enter for new line)" rows="1"></textarea>
         <select id="priority-select">
           <option value="medium">Medium</option>
           <option value="high">High</option>
